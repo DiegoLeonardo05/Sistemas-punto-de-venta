@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestion de productos | Punto de Venta</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Sistema Punto de Venta</p>
+        <h1>Gestion de productos</h1>
+      </div>
+      <div class="status" id="status">Modulo activo</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2 id="form-title">Alta de producto</h2>
+          <button class="secondary" id="cancel-edit" type="button" hidden>Cancelar edicion</button>
+        </div>
+
+        <form id="product-form" novalidate>
+          <input type="hidden" id="product-id">
+
+          <label>
+            Codigo
+            <input id="sku" name="sku" autocomplete="off" placeholder="Ej. PROD-001">
+            <span class="error" id="sku-error"></span>
+          </label>
+
+          <label>
+            Nombre
+            <input id="name" name="name" autocomplete="off" placeholder="Ej. Cafe americano">
+            <span class="error" id="name-error"></span>
+          </label>
+
+          <label>
+            Categoria
+            <select id="category" name="category">
+              <option value="">Seleccionar</option>
+              <option>Abarrotes</option>
+              <option>Bebidas</option>
+              <option>Limpieza</option>
+              <option>Electronica</option>
+              <option>Otro</option>
+            </select>
+            <span class="error" id="category-error"></span>
+          </label>
+
+          <div class="form-grid">
+            <label>
+              Precio
+              <input id="price" name="price" type="number" min="0" step="0.01" placeholder="0.00">
+              <span class="error" id="price-error"></span>
+            </label>
+
+            <label>
+              Stock
+              <input id="stock" name="stock" type="number" min="0" step="1" placeholder="0">
+              <span class="error" id="stock-error"></span>
+            </label>
+          </div>
+
+          <label>
+            Descripcion
+            <textarea id="description" name="description" rows="3" placeholder="Detalle opcional del producto"></textarea>
+          </label>
+
+          <button class="primary" type="submit">Guardar producto</button>
+        </form>
+      </section>
+
+      <section class="products">
+        <div class="products-header">
+          <div>
+            <h2>Catalogo de productos</h2>
+            <p id="summary">0 productos registrados</p>
+          </div>
+          <input id="search" type="search" placeholder="Buscar por codigo, nombre o categoria">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Producto</th>
+                <th>Categoria</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
