@@ -1,0 +1,11 @@
+CREATE TABLE products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sku TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price REAL NOT NULL CHECK(price >= 0),
+      stock INTEGER NOT NULL CHECK(stock >= 0),
+      description TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );

@@ -25,7 +25,8 @@ function ensureDatabase() {
 }
 
 function runSql(sql) {
-  const result = spawnSync("sqlite3", [DB_PATH, sql], {
+  const result = spawnSync("sqlite3", [DB_PATH], {
+    input: sql,
     encoding: "utf8"
   });
 
