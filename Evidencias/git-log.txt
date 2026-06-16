@@ -1,1 +1,0 @@
-a8d23cc Implementa modulo de gestion de productos

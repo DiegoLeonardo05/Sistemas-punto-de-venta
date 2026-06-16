@@ -1,106 +1,67 @@
-# Sistema Punto de Venta - Módulo de productos
+# Sistema Punto de Venta
 
-Proyecto desarrollado para implementar el módulo de productos de un sistema de punto de venta.
+Sistema web para gestión de productos de un punto de venta, desarrollado con Node.js y SQLite.
 
 ## Integrantes
 
-* Alejandro Castro Ramírez
-* Natanael Macías Contreras
-* Diego Leonardo Serrano
-* Horacio Gaona Martín del Campo
+- Alejandro Castro Ramirez
+- Natanael Macias Contreras
+- Diego Leonardo Serrano
+- Horacio Gaona Martin del Campo
 
-## Descripción general
+## Funcionalidades
 
-Este módulo permite administrar los productos registrados en el sistema de punto de venta. Desde la interfaz principal se pueden agregar productos nuevos, consultar el catálogo y editar la información de productos existentes.
+- Registrar productos con codigo, nombre, categoria, precio, stock y descripcion.
+- Consultar el catalogo de productos registrados.
+- Editar productos existentes.
+- Eliminar productos con confirmacion previa.
+- Validar campos obligatorios antes de guardar.
+- Buscar productos por codigo, nombre o categoria.
 
-La información de cada producto se guarda en una base de datos SQLite, por lo que los datos permanecen almacenados aunque se cierre la aplicación.
+## Requisitos
 
-## Qué hace el código
+- Node.js v18 o superior
+- sqlite3 instalado en el sistema
 
-El sistema permite realizar las siguientes acciones:
-
-* Registrar productos nuevos.
-* Mostrar los productos guardados en un catálogo.
-* Editar productos existentes.
-* Validar que los campos obligatorios estén completos.
-* Guardar la información en una base de datos local.
-* Consultar los productos almacenados desde la interfaz.
-
-Cada producto contiene datos como código, nombre, categoría, precio, stock y descripción.
-
-## Cómo funciona
-
-El proyecto funciona mediante un servidor en Node.js. El servidor se encarga de recibir las solicitudes del navegador, validar la información enviada por el usuario y guardar los datos en la base de datos SQLite.
-
-La interfaz web permite capturar la información del producto mediante un formulario. Cuando el usuario envía el formulario, el código de JavaScript toma los datos ingresados y los manda al servidor.
-
-Antes de guardar un producto, el backend revisa que los campos obligatorios tengan información válida. Si falta algún dato importante, el sistema muestra un mensaje de error y no guarda el producto.
-
-Si los datos son correctos, el producto se registra en la base de datos y después aparece en el catálogo de productos.
-
-## Funcionamiento del registro de productos
-
-Para registrar un producto, el usuario llena el formulario con la información correspondiente. El sistema revisa que los datos principales estén completos y que el precio y el stock tengan valores válidos.
-
-Cuando la información pasa la validación, el producto se almacena en la tabla `products` de la base de datos.
-
-Después de guardar el producto, el catálogo se actualiza para mostrar el nuevo registro.
-
-## Funcionamiento del catálogo
-
-El catálogo muestra los productos que ya están guardados en la base de datos. Desde esta sección se puede revisar la información principal de cada producto, como su código, nombre, categoría, precio y cantidad disponible.
-
-El catálogo se carga consultando los productos almacenados en SQLite y mostrándolos en la página principal.
-
-## Funcionamiento de la edición
-
-El sistema también permite modificar productos ya registrados. Al seleccionar un producto para editar, sus datos se cargan nuevamente en el formulario.
-
-Después de hacer los cambios, el usuario puede guardar la información actualizada. El servidor recibe los nuevos datos, los valida y actualiza el registro correspondiente en la base de datos.
-
-## Base de datos
-
-La información se guarda en una base de datos SQLite ubicada en:
-
-```text
-data/pos.db
-```
-
-Dentro de esta base de datos se utiliza la tabla `products`, donde se almacenan los productos registrados en el sistema.
-
-## Cómo ejecutar el proyecto
-
-Primero se deben instalar las dependencias:
+## Como ejecutar
 
 ```bash
 npm install
-```
-
-Después se inicia el servidor:
-
-```bash
 npm start
 ```
 
-Finalmente, se abre el navegador en la siguiente dirección:
+Abrir en el navegador: `http://localhost:3000`
 
-```text
-http://localhost:3000
-```
-
-## Cómo probar el proyecto
-
-Para ejecutar las pruebas automatizadas se usa el comando:
+## Como probar
 
 ```bash
 npm test
 ```
 
-Las pruebas revisan que el módulo pueda validar datos, registrar productos, consultar el catálogo y editar productos existentes.
+Las pruebas cubren:
 
-## Resumen del funcionamiento
+- Rechazo de productos con campos vacios o invalidos.
+- Registro, consulta y edicion de productos.
+- Eliminacion de producto existente.
+- Respuesta 404 al eliminar un producto inexistente.
 
-En general, el código conecta una interfaz web con un servidor y una base de datos local. El usuario captura los datos del producto desde el navegador, el servidor valida la información y después la guarda en SQLite.
+## Base de datos
 
-Este módulo sirve como base para otras partes del punto de venta, ya que el catálogo de productos será necesario para funciones como ventas, inventario, reportes y control de existencias.
+Se crea automaticamente en `data/pos.db` al iniciar el servidor.
 
+```bash
+# Ver estructura
+sqlite3 data/pos.db '.schema products'
+
+# Ver productos guardados
+sqlite3 data/pos.db 'SELECT id, sku, name, category, price, stock FROM products;'
+```
+
+## API
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/products | Lista todos los productos |
+| POST | /api/products | Crea un producto |
+| PUT | /api/products/:id | Actualiza un producto |
+| DELETE | /api/products/:id | Elimina un producto |
