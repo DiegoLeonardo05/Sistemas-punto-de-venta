@@ -167,6 +167,14 @@ function updateProduct(id, payload) {
   }
 }
 
+function deleteProduct(id) {
+  const current = getProductById(id);
+  if (!current) return { status: 404, body: { message: "Producto no encontrado." } };
+
+  runSql(`DELETE FROM products WHERE id = ${Number(id)};`);
+  return { status: 200, body: { message: "Producto eliminado." } };
+}
+
 function readJson(request) {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -236,6 +244,12 @@ function createServer() {
         return;
       }
 
+      if (productMatch && request.method === "DELETE") {
+        const result = deleteProduct(productMatch[1]);
+        sendJson(response, result.status, result.body);
+        return;
+      }
+
       if (url.pathname.startsWith("/api/")) {
         sendJson(response, 404, { message: "Ruta no encontrada." });
         return;
@@ -261,5 +275,6 @@ module.exports = {
   getProducts,
   createProduct,
   updateProduct,
+  deleteProduct,
   ensureDatabase
 };

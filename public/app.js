@@ -77,7 +77,10 @@ function renderProducts() {
         <td>${product.category}</td>
         <td>${money(product.price)}</td>
         <td>${product.stock}</td>
-        <td><button class="secondary" type="button" data-edit="${product.id}">Editar</button></td>
+        <td>
+          <button class="secondary" type="button" data-edit="${product.id}">Editar</button>
+          <button class="danger" type="button" data-delete="${product.id}">Eliminar</button>
+        </td>
       </tr>
     `)
     .join("");
@@ -132,6 +135,22 @@ productsBody.addEventListener("click", (event) => {
   cancelEdit.hidden = false;
   clearErrors();
   window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+productsBody.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete]");
+  if (!button) return;
+
+  const id = button.dataset.delete;
+  if (!confirm("¿Seguro que deseas eliminar este producto?")) return;
+
+  const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
+  if (response.ok) {
+    await loadProducts();
+    setStatus("Producto eliminado");
+  } else {
+    setStatus("Error al eliminar el producto");
+  }
 });
 
 cancelEdit.addEventListener("click", resetForm);
