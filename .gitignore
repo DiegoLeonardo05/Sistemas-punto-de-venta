@@ -6,3 +6,8 @@ data/*.sqlite
 data/*.sqlite-*
 .env
 npm-debug.log*
+
+# Documentos de la actividad — solo locales
+Avances/
+Evidencias/
+actividad/
