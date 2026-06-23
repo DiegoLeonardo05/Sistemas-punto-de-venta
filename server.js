@@ -6,6 +6,7 @@ const { spawnSync } = require("node:child_process");
 const PORT = Number(process.env.PORT || 3000);
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "pos.db");
 const PUBLIC_DIR = path.join(__dirname, "public");
+const IVA = 0.16;
 
 function ensureDatabase() {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -20,6 +21,26 @@ function ensureDatabase() {
       description TEXT DEFAULT '',
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      subtotal REAL NOT NULL,
+      tax REAL NOT NULL,
+      total REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS sale_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sale_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      sku TEXT NOT NULL,
+      name TEXT NOT NULL,
+      price REAL NOT NULL,
+      quantity INTEGER NOT NULL CHECK(quantity > 0),
+      subtotal REAL NOT NULL,
+      FOREIGN KEY (sale_id) REFERENCES sales(id)
     );
   `);
 }
@@ -39,6 +60,19 @@ function runSql(sql) {
 
 function runJson(sql) {
   const result = spawnSync("sqlite3", ["-json", DB_PATH, sql], {
+    encoding: "utf8"
+  });
+
+  if (result.status !== 0) {
+    throw new Error(result.stderr || "Error al ejecutar SQLite");
+  }
+
+  return result.stdout.trim() ? JSON.parse(result.stdout) : [];
+}
+
+function runJsonScript(sql) {
+  const result = spawnSync("sqlite3", ["-json", DB_PATH], {
+    input: `.bail on\n${sql}`,
     encoding: "utf8"
   });
 
@@ -175,6 +209,165 @@ function deleteProduct(id) {
   return { status: 200, body: { message: "Producto eliminado." } };
 }
 
+function validateSale(payload) {
+  const errors = {};
+
+  if (!Array.isArray(payload?.items) || payload.items.length === 0) {
+    errors.items = "La venta debe incluir al menos un producto.";
+    return { valid: false, errors };
+  }
+
+  const normalizedItems = [];
+
+  payload.items.forEach((item, index) => {
+    const id = Number(item?.id);
+    const cantidad = Number(item?.cantidad);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      errors[`items.${index}.id`] = "El producto es obligatorio.";
+    }
+
+    if (!Number.isInteger(cantidad) || cantidad <= 0) {
+      errors[`items.${index}.cantidad`] = "La cantidad debe ser un entero mayor a 0.";
+    }
+
+    if (Number.isInteger(id) && id > 0 && Number.isInteger(cantidad) && cantidad > 0) {
+      normalizedItems.push({ id, cantidad });
+    }
+  });
+
+  if (Object.keys(errors).length > 0) {
+    return { valid: false, errors };
+  }
+
+  const groupedItems = new Map();
+  for (const item of normalizedItems) {
+    groupedItems.set(item.id, (groupedItems.get(item.id) || 0) + item.cantidad);
+  }
+
+  return {
+    valid: true,
+    errors,
+    items: Array.from(groupedItems, ([id, cantidad]) => ({ id, cantidad }))
+  };
+}
+
+function calculateSaleAmounts(items) {
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const tax = subtotal * IVA;
+
+  return {
+    subtotal,
+    tax,
+    total: subtotal + tax
+  };
+}
+
+function getSaleById(id) {
+  const saleId = Number(id);
+  if (!Number.isInteger(saleId) || saleId <= 0) return null;
+
+  const rows = runJson(`
+    SELECT id, subtotal, tax, total, created_at
+    FROM sales
+    WHERE id = ${saleId};
+  `);
+
+  if (!rows[0]) return null;
+
+  const items = runJson(`
+    SELECT product_id, sku, name, price, quantity, subtotal
+    FROM sale_items
+    WHERE sale_id = ${saleId}
+    ORDER BY id;
+  `);
+
+  return {
+    ...rows[0],
+    items
+  };
+}
+
+function createSale(payload) {
+  const validation = validateSale(payload);
+  if (!validation.valid) return { status: 400, body: validation };
+
+  const items = [];
+
+  for (const item of validation.items) {
+    const product = getProductById(item.id);
+
+    if (!product) {
+      return {
+        status: 404,
+        body: { valid: false, errors: { product: `Producto no encontrado (${item.id}).` } }
+      };
+    }
+
+    if (item.cantidad > product.stock) {
+      return {
+        status: 409,
+        body: {
+          valid: false,
+          errors: {
+            stock: `Stock insuficiente para ${product.name} (disponible: ${product.stock}).`
+          }
+        }
+      };
+    }
+
+    const price = Number(product.price);
+    items.push({
+      product_id: product.id,
+      sku: product.sku,
+      name: product.name,
+      price,
+      quantity: item.cantidad,
+      subtotal: price * item.cantidad
+    });
+  }
+
+  const amounts = calculateSaleAmounts(items);
+  const itemStatements = items
+    .map((item) => `
+      INSERT INTO sale_items (sale_id, product_id, sku, name, price, quantity, subtotal)
+      VALUES (
+        (SELECT id FROM current_sale),
+        ${item.product_id},
+        ${sqlText(item.sku)},
+        ${sqlText(item.name)},
+        ${item.price},
+        ${item.quantity},
+        ${item.subtotal}
+      );
+
+      UPDATE products
+      SET stock = stock - ${item.quantity}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${item.product_id};
+    `)
+    .join("");
+
+  const rows = runJsonScript(`
+    BEGIN;
+
+    CREATE TEMP TABLE current_sale (id INTEGER NOT NULL);
+
+    INSERT INTO sales (subtotal, tax, total)
+    VALUES (${amounts.subtotal}, ${amounts.tax}, ${amounts.total});
+
+    INSERT INTO current_sale (id) VALUES (last_insert_rowid());
+
+    ${itemStatements}
+
+    SELECT id FROM current_sale;
+
+    COMMIT;
+  `);
+
+  const sale = getSaleById(rows[0].id);
+  return { status: 201, body: sale };
+}
+
 function readJson(request) {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -237,6 +430,12 @@ function createServer() {
         return;
       }
 
+      if (url.pathname === "/api/sales" && request.method === "POST") {
+        const result = createSale(await readJson(request));
+        sendJson(response, result.status, result.body);
+        return;
+      }
+
       const productMatch = url.pathname.match(/^\/api\/products\/(\d+)$/);
       if (productMatch && request.method === "PUT") {
         const result = updateProduct(productMatch[1], await readJson(request));
@@ -276,5 +475,7 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  createSale,
+  getSaleById,
   ensureDatabase
 };

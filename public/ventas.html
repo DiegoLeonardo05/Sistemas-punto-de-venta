@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ventas | Punto de Venta</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Sistema Punto de Venta</p>
+        <h1>Punto de Venta &mdash; Ventas</h1>
+      </div>
+      <div class="topbar-actions">
+        <nav aria-label="Navegacion principal">
+          <a class="secondary topbar-link" href="/index.html">Productos</a>
+        </nav>
+        <div class="status" id="venta-status">Modulo de ventas listo</div>
+      </div>
+    </header>
+
+    <main class="layout ventas-layout">
+      <section class="panel ventas-panel">
+        <div class="panel-header">
+          <h2>Productos disponibles</h2>
+        </div>
+
+        <label class="search-label" for="catalogo-busqueda">
+          Buscar producto
+          <input id="catalogo-busqueda" type="search" placeholder="Buscar por codigo, nombre o categoria">
+        </label>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="catalogo-lista">
+              <tr>
+                <td class="empty" colspan="5">No hay productos para mostrar.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel ventas-panel">
+        <div class="panel-header">
+          <h2>Venta actual</h2>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="venta-items">
+              <tr>
+                <td class="empty" colspan="5">No hay productos en la venta.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="totales" aria-label="Totales de la venta">
+          <div>
+            <span>Subtotal</span>
+            <strong id="venta-subtotal">$0.00</strong>
+          </div>
+          <div>
+            <span>IVA 16%</span>
+            <strong id="venta-impuesto">$0.00</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong id="venta-total">$0.00</strong>
+          </div>
+        </div>
+
+        <button class="primary venta-action" id="registrar-venta" type="button" disabled>Registrar venta</button>
+
+        <section class="ticket" id="ticket" hidden>
+          <h2>Ticket</h2>
+        </section>
+      </section>
+    </main>
+
+    <script src="/ventas.js"></script>
+  </body>
+</html>
